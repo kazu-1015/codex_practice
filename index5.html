@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>スケジュールアプリ（拡張版 Ver.5）</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --accent: #2f76d0;
+      --accent-weak: rgba(47, 118, 208, 0.12);
+      --danger: #cf4d45;
+      --surface: #f7f9fc;
+      --border: #d5dce7;
+      --text-muted: #5a6473;
+      --bg: #eef2f8;
+      font-family: "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: #1d2733;
+    }
+
+    header {
+      background: linear-gradient(90deg, #3f88f0, #285bd8);
+      color: #fff;
+      padding: 16px 24px 12px;
+      box-shadow: 0 2px 8px rgba(20, 40, 80, 0.35);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.4rem;
+      letter-spacing: 0.08em;
+    }
+
+    .toolbar {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .toolbar .range {
+      font-weight: 600;
+      font-size: 1.05rem;
+    }
+
+    .toolbar .nav-buttons {
+      display: inline-flex;
+      border: 1px solid rgba(255, 255, 255, 0.65);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .toolbar .nav-buttons button {
+      background: rgba(0, 0, 0, 0.12);
+      color: #fff;
+      border: none;
+      padding: 6px 12px;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+
+    .toolbar .nav-buttons button:hover {
+      background: rgba(0, 0, 0, 0.24);
+    }
+
+    .view-switch {
+      display: inline-flex;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.12);
+      padding: 4px;
+      gap: 4px;
+    }
+
+    .view-switch button {
+      border: none;
+      border-radius: 999px;
+      background: transparent;
+      color: #fff;
+      padding: 6px 16px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+
+    .view-switch button.active {
+      background: #fff;
+      color: #285bd8;
+      font-weight: 600;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    }
+
+    main.container {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 16px;
+      padding: 20px;
+    }
+
+    aside {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .panel {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 6px 16px rgba(15, 35, 60, 0.12);
+      border: 1px solid rgba(15, 35, 60, 0.08);
+    }
+
+    .panel h2 {
+      margin: 0 0 12px;
+      font-size: 1.1rem;
+    }
+
+    form {
+      display: grid;
+      gap: 12px;
+    }
+
+    label span.caption {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    input[type="text"],
+    input[type="date"],
+    input[type="time"],
+    textarea {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.95rem;
+      background: #fff;
+      width: 100%;
+    }
+
+    input[type="time"] {
+      letter-spacing: 0.05em;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .form-row-two {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .tag-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .tag-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: #324055;
+      transition: border 0.2s, background 0.2s;
+    }
+
+    .tag-pill input {
+      accent-color: var(--accent);
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary,
+    .btn-secondary,
+    .btn-danger {
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(47, 118, 208, 0.35);
+    }
+
+    .btn-primary:hover {
+      background: #1e5eb7;
+    }
+
+    .btn-secondary {
+      background: #fff;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    .btn-secondary:hover {
+      background: var(--accent-weak);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(207, 77, 69, 0.25);
+    }
+
+    .btn-danger:hover {
+      background: #b63a33;
+    }
+
+    .calendar-panel {
+      display: grid;
+      gap: 16px;
+    }
+
+    .calendar-shell {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(15, 35, 60, 0.12);
+      overflow: hidden;
+    }
+
+    .weekday-header {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      border-bottom: 1px solid var(--border);
+      background: #f0f4fb;
+    }
+
+    .weekday-header span {
+      padding: 8px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-align: center;
+      color: #244a88;
+    }
+
+    .month-weeks,
+    .week-grid {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .month-week,
+    .week-row {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      grid-auto-rows: minmax(28px, auto);
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+
+    .month-week:last-child,
+    .week-row:last-child {
+      border-bottom: none;
+    }
+
+    .day-cell {
+      border-right: 1px solid var(--border);
+      min-height: 120px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: #fff;
+      grid-row: 1;
+    }
+
+    .week-row .day-cell {
+      min-height: 160px;
+    }
+
+    .day-cell:last-child {
+      border-right: none;
+    }
+
+    .day-cell.outside {
+      background: #f8f9fd;
+      color: var(--text-muted);
+    }
+
+    .day-number {
+      font-weight: 600;
+      color: #273248;
+    }
+
+    .day-cell.outside .day-number {
+      color: #97a0b0;
+    }
+
+    .day-cell.today .day-number {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 999px;
+      padding: 2px 8px;
+      align-self: flex-start;
+    }
+
+    .day-cell.drop-target {
+      outline: 2px dashed var(--accent);
+      outline-offset: -2px;
+    }
+
+    .event-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      cursor: pointer;
+      border-left: 4px solid var(--accent);
+      background: var(--accent-weak);
+      margin: 2px 8px 6px 8px;
+      grid-row: auto;
+      grid-column: span 1;
+      position: relative;
+    }
+
+    .event-bar .title {
+      font-weight: 600;
+      color: #1f2b3d;
+    }
+
+    .event-bar .time,
+    .event-bar .tags {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .event-bar.dragging {
+      opacity: 0.6;
+    }
+
+    dialog::backdrop {
+      background: rgba(17, 28, 45, 0.45);
+    }
+
+    dialog {
+      border: none;
+      border-radius: 16px;
+      padding: 0;
+      box-shadow: 0 12px 32px rgba(15, 35, 60, 0.35);
+      width: min(460px, 92vw);
+    }
+
+    .dialog-body {
+      padding: 20px 24px 24px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .dialog-body h3 {
+      margin: 0 0 4px;
+      font-size: 1.2rem;
+    }
+
+    .dialog-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+
+    @media (max-width: 960px) {
+      main.container {
+        grid-template-columns: 1fr;
+      }
+
+      aside {
+        order: 2;
+      }
+
+      .calendar-panel {
+        order: 1;
+      }
+    }
+
+    @media (max-width: 640px) {
+      header {
+        padding: 14px 16px 10px;
+      }
+
+      header h1 {
+        font-size: 1.2rem;
+      }
+
+      .toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .view-switch {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .day-cell {
+        min-height: 120px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>スケジュールアプリ</h1>
+    <div class="toolbar">
+      <span class="range" id="rangeLabel"></span>
+      <div class="nav-buttons">
+        <button type="button" id="prevBtn">◀ 前へ</button>
+        <button type="button" id="todayBtn">今日</button>
+        <button type="button" id="nextBtn">次へ ▶</button>
+      </div>
+      <div class="view-switch" id="topViewSwitch">
+        <button type="button" data-view="month" class="active">月</button>
+        <button type="button" data-view="week">週</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <aside>
+      <section class="panel">
+        <h2>予定を登録</h2>
+        <form id="scheduleForm">
+          <div class="form-row-two">
+            <label>
+              開始日
+              <input type="date" id="startDateInput" name="startDate" required />
+            </label>
+            <label>
+              終了日
+              <input type="date" id="endDateInput" name="endDate" required />
+            </label>
+          </div>
+          <div class="form-row-two">
+            <label>
+              開始時間（任意）
+              <input type="time" id="startTimeInput" name="startTime" step="900" />
+            </label>
+            <label>
+              終了時間（任意）
+              <input type="time" id="endTimeInput" name="endTime" step="900" />
+            </label>
+          </div>
+          <label>
+            タイトル
+            <input type="text" id="titleInput" name="title" placeholder="例：打ち合わせ" required />
+          </label>
+          <label>
+            メモ
+            <textarea id="memoInput" name="memo" placeholder="メモは任意です"></textarea>
+          </label>
+          <div class="tag-group">
+            <span>タグ（任意・複数選択可）</span>
+            <div class="tag-options">
+              <label class="tag-pill"><input type="checkbox" name="tags" value="guest" />来客</label>
+              <label class="tag-pill"><input type="checkbox" name="tags" value="meeting" />会議</label>
+              <label class="tag-pill"><input type="checkbox" name="tags" value="outing" />外出</label>
+              <label class="tag-pill"><input type="checkbox" name="tags" value="holiday" />休日</label>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">予定を追加</button>
+            <button type="button" class="btn-secondary" id="clearBtn">入力クリア</button>
+          </div>
+        </form>
+      </section>
+    </aside>
+
+    <section class="calendar-panel">
+      <div class="calendar-shell" id="monthShell">
+        <div class="weekday-header" id="monthWeekdays"></div>
+        <div class="month-weeks" id="monthView"></div>
+      </div>
+      <div class="calendar-shell" id="weekShell" hidden>
+        <div class="weekday-header" id="weekWeekdays"></div>
+        <div class="week-grid" id="weekView"></div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="eventDialog">
+    <form id="eventDialogForm" class="dialog-body">
+      <h3>予定を編集</h3>
+      <div class="form-row-two">
+        <label>
+          開始日
+          <input type="date" id="dialogStartDate" required />
+        </label>
+        <label>
+          終了日
+          <input type="date" id="dialogEndDate" required />
+        </label>
+      </div>
+      <div class="form-row-two">
+        <label>
+          開始時間（任意）
+          <input type="time" id="dialogStartTime" step="900" />
+        </label>
+        <label>
+          終了時間（任意）
+          <input type="time" id="dialogEndTime" step="900" />
+        </label>
+      </div>
+      <label>
+        タイトル
+        <input type="text" id="dialogTitle" required />
+      </label>
+      <label>
+        メモ
+        <textarea id="dialogMemo" rows="3"></textarea>
+      </label>
+      <div class="tag-group">
+        <span>タグ（任意・複数選択可）</span>
+        <div class="tag-options">
+          <label class="tag-pill"><input type="checkbox" name="dialogTags" value="guest" />来客</label>
+          <label class="tag-pill"><input type="checkbox" name="dialogTags" value="meeting" />会議</label>
+          <label class="tag-pill"><input type="checkbox" name="dialogTags" value="outing" />外出</label>
+          <label class="tag-pill"><input type="checkbox" name="dialogTags" value="holiday" />休日</label>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="btn-secondary" id="dialogCancelBtn">キャンセル</button>
+        <button type="button" class="btn-danger" id="dialogDeleteBtn">削除</button>
+        <button type="submit" class="btn-primary">更新</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    const STORAGE_KEY = "advancedSchedulesV2";
+    const VIEW_MODES = ["month", "week"];
+    const TAG_OPTIONS = [
+      { value: "guest", label: "来客", border: "#2f76d0", background: "rgba(47,118,208,0.18)" },
+      { value: "meeting", label: "会議", border: "#d97706", background: "rgba(217,119,6,0.18)" },
+      { value: "outing", label: "外出", border: "#1f9d55", background: "rgba(31,157,85,0.18)" },
+      { value: "holiday", label: "休日", border: "#dc2626", background: "rgba(220,38,38,0.18)" },
+    ];
+    const TAG_ORDER = TAG_OPTIONS.map((tag) => tag.value);
+
+    const topViewSwitch = document.getElementById("topViewSwitch");
+    const rangeLabel = document.getElementById("rangeLabel");
+    const prevBtn = document.getElementById("prevBtn");
+    const todayBtn = document.getElementById("todayBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const monthShell = document.getElementById("monthShell");
+    const weekShell = document.getElementById("weekShell");
+    const monthWeekdays = document.getElementById("monthWeekdays");
+    const weekWeekdays = document.getElementById("weekWeekdays");
+    const monthView = document.getElementById("monthView");
+    const weekView = document.getElementById("weekView");
+
+    const scheduleForm = document.getElementById("scheduleForm");
+    const startDateInput = document.getElementById("startDateInput");
+    const endDateInput = document.getElementById("endDateInput");
+    const startTimeInput = document.getElementById("startTimeInput");
+    const endTimeInput = document.getElementById("endTimeInput");
+    const titleInput = document.getElementById("titleInput");
+    const memoInput = document.getElementById("memoInput");
+    const clearBtn = document.getElementById("clearBtn");
+    const formTagInputs = Array.from(scheduleForm.querySelectorAll('input[name="tags"]'));
+
+    const eventDialog = document.getElementById("eventDialog");
+    const dialogForm = document.getElementById("eventDialogForm");
+    const dialogStartDateInput = document.getElementById("dialogStartDate");
+    const dialogEndDateInput = document.getElementById("dialogEndDate");
+    const dialogStartTimeInput = document.getElementById("dialogStartTime");
+    const dialogEndTimeInput = document.getElementById("dialogEndTime");
+    const dialogTitleInput = document.getElementById("dialogTitle");
+    const dialogMemoInput = document.getElementById("dialogMemo");
+    const dialogDeleteBtn = document.getElementById("dialogDeleteBtn");
+    const dialogCancelBtn = document.getElementById("dialogCancelBtn");
+    const dialogTagInputs = Array.from(dialogForm.querySelectorAll('input[name="dialogTags"]'));
+
+    const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+
+    const today = new Date();
+    let focusDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    let currentView = "month";
+    let weekStartExact = false;
+    let schedules = loadSchedules();
+    let activeScheduleId = null;
+    let dragState = null;
+
+    init();
+
+    function init() {
+      renderWeekdayHeaders();
+      const isoToday = formatInputDate(today);
+      startDateInput.value = isoToday;
+      endDateInput.value = isoToday;
+      render();
+      setupEvents();
+    }
+
+    function renderWeekdayHeaders() {
+      monthWeekdays.innerHTML = "";
+      weekWeekdays.innerHTML = "";
+      weekdays.forEach((day) => {
+        const monthSpan = document.createElement("span");
+        monthSpan.textContent = day;
+        monthWeekdays.appendChild(monthSpan);
+        const weekSpan = document.createElement("span");
+        weekSpan.textContent = day;
+        weekWeekdays.appendChild(weekSpan);
+      });
+    }
+
+    function setupEvents() {
+      topViewSwitch.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-view]");
+        if (button) {
+          setView(button.dataset.view);
+        }
+      });
+
+      prevBtn.addEventListener("click", () => moveFocus(-1));
+      nextBtn.addEventListener("click", () => moveFocus(1));
+      todayBtn.addEventListener("click", () => {
+        focusDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        if (currentView === "week") {
+          weekStartExact = true; // 今日を最左列にする
+        } else {
+          weekStartExact = false;
+        }
+        render();
+      });
+
+      startDateInput.addEventListener("change", () => {
+        if (!startDateInput.value) return;
+        if (!endDateInput.value || endDateInput.value < startDateInput.value) {
+          endDateInput.value = startDateInput.value;
+        }
+      });
+
+      scheduleForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const formData = new FormData(scheduleForm);
+        const startDate = (formData.get("startDate") || "").toString();
+        const endDate = (formData.get("endDate") || "").toString();
+        const title = (formData.get("title") || "").toString().trim();
+        if (!startDate || !title) {
+          alert("開始日とタイトルを入力してください。");
+          return;
+        }
+        const normalizedEnd = endDate && endDate >= startDate ? endDate : startDate;
+        const tags = formTagInputs
+          .filter((input) => input.checked)
+          .map((input) => input.value)
+          .filter((value) => TAG_ORDER.includes(value));
+        const newSchedule = {
+          id: Date.now().toString(),
+          startDate,
+          endDate: normalizedEnd,
+          startTime: (formData.get("startTime") || "").toString(),
+          endTime: (formData.get("endTime") || "").toString(),
+          title,
+          memo: (formData.get("memo") || "").toString().trim(),
+          tags,
+        };
+        schedules.push(newSchedule);
+        saveSchedules();
+        scheduleForm.reset();
+        startDateInput.value = startDate;
+        endDateInput.value = normalizedEnd;
+        render();
+      });
+
+      clearBtn.addEventListener("click", () => {
+        scheduleForm.reset();
+        const isoToday = formatInputDate(today);
+        startDateInput.value = isoToday;
+        endDateInput.value = isoToday;
+      });
+
+      dialogForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (!activeScheduleId) return;
+        const target = schedules.find((item) => item.id === activeScheduleId);
+        if (!target) return;
+        const startDate = dialogStartDateInput.value;
+        const endDate = dialogEndDateInput.value;
+        const title = dialogTitleInput.value.trim();
+        if (!startDate || !title) {
+          alert("開始日とタイトルを入力してください。");
+          return;
+        }
+        const normalizedEnd = endDate && endDate >= startDate ? endDate : startDate;
+        target.startDate = startDate;
+        target.endDate = normalizedEnd;
+        target.startTime = dialogStartTimeInput.value;
+        target.endTime = dialogEndTimeInput.value;
+        target.title = title;
+        target.memo = dialogMemoInput.value.trim();
+        target.tags = dialogTagInputs
+          .filter((input) => input.checked)
+          .map((input) => input.value)
+          .filter((value) => TAG_ORDER.includes(value));
+        saveSchedules();
+        closeEventDialog();
+        render();
+      });
+
+      dialogDeleteBtn.addEventListener("click", () => {
+        if (!activeScheduleId) return;
+        const ok = confirm("この予定を削除しますか？");
+        if (!ok) return;
+        schedules = schedules.filter((item) => item.id !== activeScheduleId);
+        saveSchedules();
+        closeEventDialog();
+        render();
+      });
+
+      dialogCancelBtn.addEventListener("click", () => {
+        closeEventDialog();
+      });
+
+      eventDialog.addEventListener("close", () => {
+        activeScheduleId = null;
+        dialogForm.reset();
+      });
+    }
+
+    function loadSchedules() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        return parsed.map((item) => normalizeSchedule(item)).filter(Boolean);
+      } catch (error) {
+        console.error("Failed to parse schedules", error);
+        return [];
+      }
+    }
+
+    function normalizeSchedule(item) {
+      if (!item) return null;
+      const start = item.startDate || item.date;
+      if (!start) return null;
+      const normalized = {
+        id: item.id || Date.now().toString(),
+        startDate: start,
+        endDate: item.endDate || start,
+        startTime: item.startTime || "",
+        endTime: item.endTime || "",
+        title: item.title || "(無題)",
+        memo: item.memo || "",
+        tags: Array.isArray(item.tags)
+          ? item.tags.filter((value) => TAG_ORDER.includes(value))
+          : [],
+      };
+      if (normalized.endDate < normalized.startDate) {
+        normalized.endDate = normalized.startDate;
+      }
+      return normalized;
+    }
+
+    function saveSchedules() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(schedules));
+    }
+
+    function setView(view) {
+      if (!VIEW_MODES.includes(view)) return;
+      currentView = view;
+      weekStartExact = false;
+      if (currentView === "month") {
+        focusDate = new Date(focusDate.getFullYear(), focusDate.getMonth(), 1);
+      } else if (currentView === "week") {
+        focusDate = getStartOfWeek(focusDate);
+      }
+      render();
+    }
+
+    function moveFocus(direction) {
+      const shift = Number(direction);
+      if (Number.isNaN(shift)) return;
+      if (currentView === "week") {
+        focusDate.setDate(focusDate.getDate() + shift * 7);
+        weekStartExact = false;
+      } else {
+        focusDate.setMonth(focusDate.getMonth() + shift);
+      }
+      render();
+    }
+
+    function render() {
+      syncViewButtons();
+      if (currentView === "month") {
+        showMonthView();
+      } else {
+        showWeekView();
+      }
+    }
+
+    function syncViewButtons() {
+      topViewSwitch.querySelectorAll("button").forEach((button) => {
+        button.classList.toggle("active", button.dataset.view === currentView);
+      });
+    }
+
+    function showMonthView() {
+      monthShell.hidden = false;
+      weekShell.hidden = true;
+
+      const year = focusDate.getFullYear();
+      const month = focusDate.getMonth();
+      const firstOfMonth = new Date(year, month, 1);
+      const lastOfMonth = new Date(year, month + 1, 0);
+      const firstWeekStart = getStartOfWeek(firstOfMonth);
+
+      const weeks = [];
+      let cursor = new Date(firstWeekStart);
+      while (cursor <= lastOfMonth || weeks.length < 6) {
+        weeks.push(new Date(cursor));
+        cursor.setDate(cursor.getDate() + 7);
+        if (weeks.length > 6 && cursor > lastOfMonth) break;
+      }
+
+      rangeLabel.textContent = `${year}年${month + 1}月`;
+      monthView.innerHTML = "";
+
+      const monthEvents = schedules
+        .filter((schedule) => intersectsRange(schedule, firstWeekStart, addDays(cursor, -1)));
+
+      weeks.forEach((weekStart) => {
+        const weekRow = document.createElement("div");
+        weekRow.className = "month-week";
+        const weekEnd = addDays(weekStart, 6);
+
+        for (let i = 0; i < 7; i++) {
+          const date = addDays(weekStart, i);
+          const cell = createDayCell(date, date.getMonth() === month);
+          weekRow.appendChild(cell);
+        }
+
+        const relevant = monthEvents
+          .map((schedule) => projectScheduleToRange(schedule, weekStart, weekEnd))
+          .filter(Boolean)
+          .sort((a, b) => a.startColumn - b.startColumn || b.span - a.span);
+
+        placeEventBars(weekRow, relevant);
+        monthView.appendChild(weekRow);
+      });
+    }
+
+    function showWeekView() {
+      monthShell.hidden = true;
+      weekShell.hidden = false;
+
+      const base = weekStartExact ? new Date(focusDate) : getStartOfWeek(focusDate);
+      focusDate = new Date(base);
+      const weekEnd = addDays(base, 6);
+      const monthLabelStart = `${base.getFullYear()}年${base.getMonth() + 1}月${base.getDate()}日`;
+      const monthLabelEnd = `${weekEnd.getFullYear()}年${weekEnd.getMonth() + 1}月${weekEnd.getDate()}日`;
+      rangeLabel.textContent = `${monthLabelStart} 〜 ${monthLabelEnd}`;
+
+      weekView.innerHTML = "";
+
+      const weekRow = document.createElement("div");
+      weekRow.className = "week-row";
+
+      for (let i = 0; i < 7; i++) {
+        const date = addDays(base, i);
+        const cell = createDayCell(date, true);
+        weekRow.appendChild(cell);
+      }
+
+      const relevant = schedules
+        .map((schedule) => projectScheduleToRange(schedule, base, weekEnd))
+        .filter(Boolean)
+        .sort((a, b) => a.startColumn - b.startColumn || b.span - a.span);
+
+      placeEventBars(weekRow, relevant);
+      weekView.appendChild(weekRow);
+    }
+
+    function createDayCell(date, isCurrentMonth) {
+      const cell = document.createElement("div");
+      cell.className = "day-cell";
+      if (!isCurrentMonth) {
+        cell.classList.add("outside");
+      }
+      const iso = formatInputDate(date);
+      cell.dataset.date = iso;
+      const label = document.createElement("div");
+      label.className = "day-number";
+      label.textContent = date.getDate();
+      cell.appendChild(label);
+      if (isSameDate(date, today)) {
+        cell.classList.add("today");
+      }
+      cell.addEventListener("dragenter", handleDayDragEnter);
+      cell.addEventListener("dragover", handleDayDragOver);
+      cell.addEventListener("dragleave", handleDayDragLeave);
+      cell.addEventListener("drop", handleDayDrop);
+      return cell;
+    }
+
+    function placeEventBars(container, projectedEvents) {
+      const lanes = [];
+      projectedEvents.forEach((entry) => {
+        const laneIndex = findLane(lanes, entry.startColumn);
+        lanes[laneIndex] = entry.endColumn;
+        const bar = buildEventBar(entry.schedule, laneIndex, entry.startColumn, entry.endColumn);
+        container.appendChild(bar);
+      });
+    }
+
+    function findLane(lanes, startColumn) {
+      for (let i = 0; i < lanes.length; i++) {
+        if (startColumn > lanes[i]) {
+          return i;
+        }
+      }
+      lanes.push(-1);
+      return lanes.length - 1;
+    }
+
+    function buildEventBar(schedule, laneIndex, startColumn, endColumn) {
+      const bar = document.createElement("div");
+      bar.className = "event-bar";
+      bar.style.gridColumn = `${startColumn + 1} / ${endColumn + 2}`;
+      bar.style.gridRow = `${laneIndex + 2}`;
+      const style = resolveTagStyle(schedule.tags);
+      bar.style.borderLeftColor = style.border;
+      bar.style.background = style.background;
+
+      const titleEl = document.createElement("div");
+      titleEl.className = "title";
+      titleEl.textContent = schedule.title;
+      bar.appendChild(titleEl);
+
+      const timeEl = document.createElement("div");
+      timeEl.className = "time";
+      timeEl.textContent = formatScheduleTime(schedule);
+      bar.appendChild(timeEl);
+
+      if (schedule.tags && schedule.tags.length > 0) {
+        const tagsEl = document.createElement("div");
+        tagsEl.className = "tags";
+        tagsEl.textContent = schedule.tags
+          .map((value) => TAG_OPTIONS.find((tag) => tag.value === value)?.label || "")
+          .filter(Boolean)
+          .join("・");
+        bar.appendChild(tagsEl);
+      }
+
+      bar.dataset.scheduleId = schedule.id;
+      bar.setAttribute("draggable", "true");
+      bar.addEventListener("click", (event) => {
+        if (dragState?.active) return;
+        openEventDialog(schedule.id);
+        event.stopPropagation();
+      });
+      bar.addEventListener("dragstart", (event) => {
+        dragState = {
+          active: true,
+          scheduleId: schedule.id,
+          sourceStart: schedule.startDate,
+        };
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", schedule.id);
+        bar.classList.add("dragging");
+      });
+      bar.addEventListener("dragend", () => {
+        if (bar.classList.contains("dragging")) {
+          bar.classList.remove("dragging");
+        }
+        dragState = null;
+      });
+      return bar;
+    }
+
+    function projectScheduleToRange(schedule, rangeStart, rangeEnd) {
+      const scheduleStart = parseISODate(schedule.startDate);
+      const scheduleEnd = parseISODate(schedule.endDate);
+      if (scheduleEnd < rangeStart || scheduleStart > rangeEnd) {
+        return null;
+      }
+      const startColumn = Math.max(0, differenceInDays(scheduleStart, rangeStart));
+      const endColumn = Math.min(6, differenceInDays(scheduleEnd, rangeStart));
+      return {
+        schedule,
+        startColumn,
+        endColumn,
+        span: endColumn - startColumn + 1,
+      };
+    }
+
+    function intersectsRange(schedule, rangeStart, rangeEnd) {
+      const start = parseISODate(schedule.startDate);
+      const end = parseISODate(schedule.endDate);
+      return !(end < rangeStart || start > rangeEnd);
+    }
+
+    function openEventDialog(scheduleId) {
+      const target = schedules.find((item) => item.id === scheduleId);
+      if (!target) return;
+      activeScheduleId = scheduleId;
+      dialogStartDateInput.value = target.startDate;
+      dialogEndDateInput.value = target.endDate;
+      dialogStartTimeInput.value = target.startTime || "";
+      dialogEndTimeInput.value = target.endTime || "";
+      dialogTitleInput.value = target.title || "";
+      dialogMemoInput.value = target.memo || "";
+      dialogTagInputs.forEach((input) => {
+        input.checked = Array.isArray(target.tags) ? target.tags.includes(input.value) : false;
+      });
+      if (typeof eventDialog.showModal === "function") {
+        eventDialog.showModal();
+      } else {
+        eventDialog.setAttribute("open", "true");
+      }
+    }
+
+    function closeEventDialog() {
+      if (typeof eventDialog.close === "function") {
+        eventDialog.close();
+      } else {
+        eventDialog.removeAttribute("open");
+        eventDialog.dispatchEvent(new Event("close"));
+      }
+    }
+
+    function resolveTagStyle(tags) {
+      if (!Array.isArray(tags) || tags.length === 0) {
+        return { border: "#b9c2d2", background: "#fff" };
+      }
+      const primary = TAG_ORDER.find((tag) => tags.includes(tag));
+      if (!primary) {
+        return { border: "#b9c2d2", background: "#fff" };
+      }
+      const option = TAG_OPTIONS.find((tag) => tag.value === primary);
+      return option
+        ? { border: option.border, background: option.background }
+        : { border: "#b9c2d2", background: "#fff" };
+    }
+
+    function formatScheduleTime(schedule) {
+      if (!schedule.startTime && !schedule.endTime) {
+        const start = schedule.startDate === schedule.endDate
+          ? "終日"
+          : `${formatJapaneseDate(schedule.startDate)} 〜 ${formatJapaneseDate(schedule.endDate)}`;
+        return start;
+      }
+      const start = schedule.startTime ? schedule.startTime.slice(0, 5) : "--:--";
+      const end = schedule.endTime ? schedule.endTime.slice(0, 5) : "--:--";
+      if (schedule.startDate === schedule.endDate) {
+        return `${start} 〜 ${end}`;
+      }
+      return `${formatJapaneseDate(schedule.startDate)} ${start} 〜 ${formatJapaneseDate(schedule.endDate)} ${end}`;
+    }
+
+    function formatJapaneseDate(isoDate) {
+      const date = parseISODate(isoDate);
+      return `${date.getMonth() + 1}月${date.getDate()}日`;
+    }
+
+    function handleDayDragEnter(event) {
+      if (!dragState?.active) return;
+      event.currentTarget.classList.add("drop-target");
+    }
+
+    function handleDayDragOver(event) {
+      if (!dragState?.active) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+    }
+
+    function handleDayDragLeave(event) {
+      event.currentTarget.classList.remove("drop-target");
+    }
+
+    function handleDayDrop(event) {
+      const cell = event.currentTarget;
+      cell.classList.remove("drop-target");
+      if (!dragState?.active) return;
+      event.preventDefault();
+      const targetSchedule = schedules.find((item) => item.id === dragState.scheduleId);
+      if (!targetSchedule) return;
+      const dropDate = cell.dataset.date;
+      if (!dropDate) return;
+      const diff = differenceInDays(parseISODate(dropDate), parseISODate(dragState.sourceStart));
+      if (diff === 0) {
+        dragState = null;
+        return;
+      }
+      const newStart = addDays(parseISODate(targetSchedule.startDate), diff);
+      const newEnd = addDays(parseISODate(targetSchedule.endDate), diff);
+      targetSchedule.startDate = formatInputDate(newStart);
+      targetSchedule.endDate = formatInputDate(newEnd);
+      dragState = null;
+      saveSchedules();
+      render();
+    }
+
+    function formatInputDate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function parseISODate(isoString) {
+      const [year, month, day] = isoString.split("-").map(Number);
+      return new Date(year, (month || 1) - 1, day || 1);
+    }
+
+    function addDays(date, days) {
+      const result = new Date(date);
+      result.setDate(result.getDate() + days);
+      return result;
+    }
+
+    function differenceInDays(a, b) {
+      const start = new Date(a.getFullYear(), a.getMonth(), a.getDate());
+      const end = new Date(b.getFullYear(), b.getMonth(), b.getDate());
+      return Math.round((start - end) / 86400000);
+    }
+
+    function isSameDate(a, b) {
+      return (
+        a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate()
+      );
+    }
+
+    function getStartOfWeek(date) {
+      const result = new Date(date);
+      const day = result.getDay();
+      result.setDate(result.getDate() - day);
+      return new Date(result.getFullYear(), result.getMonth(), result.getDate());
+    }
+  </script>
+</body>
+</html>
