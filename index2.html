@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>スケジュールアプリ</title>
+  <style>
+    body {
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+      color: #333;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background-color: #fff;
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 1.8rem;
+      text-align: center;
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.95rem;
+    }
+
+    input,
+    textarea,
+    button {
+      margin-top: 8px;
+      padding: 10px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    button {
+      cursor: pointer;
+      background-color: #3f8efc;
+      color: #fff;
+      border: none;
+      transition: background-color 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #2f6fd6;
+    }
+
+    /* フォームボタンの配置 */
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 12px;
+    }
+
+    li {
+      padding: 16px;
+      border-radius: 6px;
+      background-color: #f9fafc;
+      border: 1px solid #e0e6f0;
+    }
+
+    /* 編集・削除ボタンの配置 */
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* 編集ボタンのスタイル */
+    .edit-button {
+      background-color: #f0ad4e;
+    }
+
+    .edit-button:hover {
+      background-color: #d68a1c;
+    }
+
+    /* 編集キャンセルボタンのスタイル */
+    #cancel-edit {
+      background-color: #6c757d;
+    }
+
+    #cancel-edit:hover {
+      background-color: #5a6268;
+    }
+
+    /* 削除ボタンのスタイル */
+    .delete-button {
+      background-color: #e74c3c;
+    }
+
+    .delete-button:hover {
+      background-color: #c0392b;
+    }
+
+    .schedule-date {
+      font-weight: bold;
+      color: #2f6fd6;
+      margin-bottom: 4px;
+    }
+
+    .schedule-title {
+      font-size: 1.1rem;
+      margin-bottom: 4px;
+    }
+
+    .empty-message {
+      text-align: center;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>スケジュールアプリ</h1>
+    <form id="schedule-form">
+      <label>
+        日付
+        <input type="date" id="date" required>
+      </label>
+      <label>
+        タイトル
+        <input type="text" id="title" placeholder="タイトルを入力" required>
+      </label>
+      <label>
+        メモ
+        <textarea id="memo" placeholder="メモを入力"></textarea>
+      </label>
+      <div class="form-actions">
+        <button type="submit" id="submit-button">追加</button>
+        <!-- 編集キャンセルボタン -->
+        <button type="button" id="cancel-edit" hidden>編集をキャンセル</button>
+      </div>
+    </form>
+
+    <ul id="schedule-list"></ul>
+    <p id="empty-message" class="empty-message" hidden>予定はまだありません。</p>
+  </div>
+
+  <script>
+    (function () {
+      const STORAGE_KEY = 'simpleScheduleAppSchedules';
+      const form = document.getElementById('schedule-form');
+      const dateInput = document.getElementById('date');
+      const titleInput = document.getElementById('title');
+      const memoInput = document.getElementById('memo');
+      const submitButton = document.getElementById('submit-button'); // 送信ボタン要素を取得
+      const cancelEditButton = document.getElementById('cancel-edit'); // 編集キャンセルボタン要素を取得
+      const list = document.getElementById('schedule-list');
+      const emptyMessage = document.getElementById('empty-message');
+      let editingIndex = null; // 編集中の予定のインデックス
+
+      function loadSchedules() {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (!saved) {
+            return [];
+          }
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            return parsed;
+          }
+        } catch (e) {
+          console.warn('スケジュールの読み込みに失敗しました', e);
+        }
+        return [];
+      }
+
+      function saveSchedules(schedules) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(schedules));
+      }
+
+      function createScheduleItem(schedule, index) {
+        const item = document.createElement('li');
+
+        const date = document.createElement('div');
+        date.className = 'schedule-date';
+        date.textContent = schedule.date || '日付未設定';
+        item.appendChild(date);
+
+        const title = document.createElement('div');
+        title.className = 'schedule-title';
+        title.textContent = schedule.title;
+        item.appendChild(title);
+
+        if (schedule.memo) {
+          const memo = document.createElement('div');
+          memo.textContent = schedule.memo;
+          item.appendChild(memo);
+        }
+
+        const actionButtons = document.createElement('div');
+        actionButtons.className = 'action-buttons'; // 編集・削除ボタンをまとめる要素
+
+        const createActionButton = (text, className, handler) => {
+          // ボタン生成用のヘルパー関数
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = className;
+          button.textContent = text;
+          button.addEventListener('click', handler);
+          return button;
+        };
+
+        // 編集ボタンを作成
+        const editButton = createActionButton('編集', 'edit-button', () => {
+          enterEditMode(index);
+        });
+
+        // 削除ボタンを作成
+        const deleteButton = createActionButton('削除', 'delete-button', () => {
+          if (!confirm('本当に削除しますか？')) {
+            return;
+          }
+          deleteSchedule(index);
+        });
+
+        // 編集ボタンと削除ボタンを確実に追加
+        actionButtons.appendChild(editButton);
+        actionButtons.appendChild(deleteButton);
+        item.appendChild(actionButtons);
+
+        return item;
+      }
+
+      // 指定した予定を削除
+      function deleteSchedule(index) {
+        schedules.splice(index, 1);
+        saveSchedules(schedules);
+        // 編集中に削除された場合の処理
+        if (editingIndex !== null) {
+          if (editingIndex === index) {
+            exitEditMode();
+          } else if (editingIndex > index) {
+            editingIndex -= 1;
+          }
+        }
+        renderSchedules(schedules);
+      }
+
+      // 編集モードに切り替える
+      function enterEditMode(index) {
+        const schedule = schedules[index];
+        editingIndex = index;
+        dateInput.value = schedule.date || '';
+        titleInput.value = schedule.title || '';
+        memoInput.value = schedule.memo || '';
+        submitButton.textContent = '更新'; // ボタンのラベルを更新に変更
+        cancelEditButton.hidden = false;
+        titleInput.focus();
+      }
+
+      // 編集モードを終了する
+      function exitEditMode() {
+        editingIndex = null;
+        form.reset();
+        submitButton.textContent = '追加';
+        cancelEditButton.hidden = true;
+      }
+
+      function renderSchedules(schedules) {
+        list.innerHTML = '';
+        if (schedules.length === 0) {
+          emptyMessage.hidden = false;
+          return;
+        }
+        emptyMessage.hidden = true;
+        schedules.forEach((schedule, index) => {
+          const item = createScheduleItem(schedule, index);
+          list.appendChild(item);
+        });
+      }
+
+      const schedules = loadSchedules();
+      renderSchedules(schedules);
+
+      form.addEventListener('submit', event => {
+        event.preventDefault();
+        const schedule = {
+          date: dateInput.value,
+          title: titleInput.value.trim(),
+          memo: memoInput.value.trim()
+        };
+
+        if (!schedule.title) {
+          alert('タイトルを入力してください。');
+          return;
+        }
+
+        if (editingIndex !== null) {
+          // 既存の予定を更新
+          schedules[editingIndex] = schedule;
+          saveSchedules(schedules);
+          renderSchedules(schedules);
+          exitEditMode();
+        } else {
+          schedules.push(schedule);
+          saveSchedules(schedules);
+          renderSchedules(schedules);
+
+          form.reset();
+        }
+      });
+
+      // 編集キャンセルボタン押下時の処理
+      cancelEditButton.addEventListener('click', () => {
+        exitEditMode();
+      });
+    })();
+  </script>
+</body>
+</html>
