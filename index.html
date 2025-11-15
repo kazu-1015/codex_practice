@@ -208,51 +208,49 @@
         const date = document.createElement('div');
         date.className = 'schedule-date';
         date.textContent = schedule.date || '日付未設定';
+        item.appendChild(date);
 
         const title = document.createElement('div');
         title.className = 'schedule-title';
         title.textContent = schedule.title;
+        item.appendChild(title);
 
         if (schedule.memo) {
           const memo = document.createElement('div');
           memo.textContent = schedule.memo;
-          item.append(date, title, memo);
-        } else {
-          item.append(date, title);
+          item.appendChild(memo);
         }
 
         const actionButtons = document.createElement('div');
         actionButtons.className = 'action-buttons'; // 編集・削除ボタンをまとめる要素
 
-        // 編集ボタンを作成
-        const editButton = document.createElement('button');
-        editButton.type = 'button';
-        editButton.className = 'edit-button';
-        editButton.textContent = '編集';
+        const createActionButton = (text, className, handler) => {
+          // ボタン生成用のヘルパー関数
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = className;
+          button.textContent = text;
+          button.addEventListener('click', handler);
+          return button;
+        };
 
-        // 編集ボタン押下時の処理
-        editButton.addEventListener('click', () => {
+        // 編集ボタンを作成
+        const editButton = createActionButton('編集', 'edit-button', () => {
           enterEditMode(index);
         });
 
         // 削除ボタンを作成
-        const deleteButton = document.createElement('button');
-        deleteButton.type = 'button';
-        deleteButton.className = 'delete-button';
-        deleteButton.textContent = '削除';
-
-        // 削除ボタン押下時の処理
-        deleteButton.addEventListener('click', () => {
+        const deleteButton = createActionButton('削除', 'delete-button', () => {
           if (!confirm('本当に削除しますか？')) {
             return;
           }
           deleteSchedule(index);
         });
 
-        // 並び順を明示してボタンを追加
+        // 編集ボタンと削除ボタンを確実に追加
         actionButtons.appendChild(editButton);
         actionButtons.appendChild(deleteButton);
-        item.append(actionButtons);
+        item.appendChild(actionButtons);
 
         return item;
       }
