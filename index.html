@@ -249,7 +249,9 @@
           deleteSchedule(index);
         });
 
-        actionButtons.append(editButton, deleteButton);
+        // 並び順を明示してボタンを追加
+        actionButtons.appendChild(editButton);
+        actionButtons.appendChild(deleteButton);
         item.append(actionButtons);
 
         return item;
