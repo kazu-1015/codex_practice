@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2026 新年会</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: light;
+      --accent: #ff6b6b;
+      --accent-dark: #c44d4d;
+      --text-primary: #1f2933;
+      --text-secondary: #52606d;
+      --bg: #f7f9fb;
+      --card-bg: rgba(255, 255, 255, 0.92);
+      --shadow: 0 18px 45px rgba(31, 41, 51, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Noto Sans JP", system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      line-height: 1.7;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 20px;
+    }
+
+    .card {
+      width: min(960px, 100%);
+      border-radius: 28px;
+      overflow: hidden;
+      background: var(--card-bg);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+    }
+
+    .hero {
+      position: relative;
+      height: clamp(260px, 35vw, 420px);
+      display: grid;
+      place-items: center;
+      color: #fff;
+      text-align: center;
+      padding: 48px 24px;
+      background: linear-gradient(rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.6)),
+        url("https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1600&q=80")
+          center/cover;
+    }
+
+    .hero__tagline {
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-size: 0.95rem;
+      opacity: 0.85;
+    }
+
+    .hero__title {
+      margin-top: 14px;
+      font-size: clamp(2.4rem, 4vw, 3.4rem);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      line-height: 1.1;
+    }
+
+    .hero__subtitle {
+      margin-top: 16px;
+      font-size: clamp(1rem, 2.2vw, 1.25rem);
+      opacity: 0.9;
+    }
+
+    .details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 32px;
+      padding: clamp(32px, 6vw, 56px);
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.7));
+    }
+
+    .detail-item {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .detail-item__icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255, 107, 107, 0.18);
+      display: grid;
+      place-items: center;
+      font-size: 1.3rem;
+      color: var(--accent);
+    }
+
+    .detail-item__label {
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: 0.06em;
+      color: var(--accent-dark);
+    }
+
+    .detail-item__content {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 28px 14px;
+      }
+
+      .card {
+        border-radius: 22px;
+      }
+
+      .hero {
+        height: clamp(220px, 58vw, 320px);
+        padding: 40px 20px;
+      }
+
+      .detail-item__label {
+        font-size: 1rem;
+      }
+
+      .detail-item__content {
+        font-size: 0.95rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <article class="card">
+    <header class="hero">
+      <p class="hero__tagline">WELCOME 2026</p>
+      <h1 class="hero__title">2026 新年会</h1>
+      <p class="hero__subtitle">新しい一年のはじまりを、仲間と共に祝福しましょう。</p>
+    </header>
+    <section class="details" aria-label="新年会の詳細">
+      <div class="detail-item">
+        <span class="detail-item__icon" aria-hidden="true">🎉</span>
+        <span class="detail-item__label">タイトル</span>
+        <p class="detail-item__content">2026 新年会</p>
+      </div>
+      <div class="detail-item">
+        <span class="detail-item__icon" aria-hidden="true">🗓️</span>
+        <span class="detail-item__label">開催日時</span>
+        <p class="detail-item__content">2026年1月9日 19：00～</p>
+      </div>
+      <div class="detail-item">
+        <span class="detail-item__icon" aria-hidden="true">📍</span>
+        <span class="detail-item__label">場所</span>
+        <p class="detail-item__content">Malt 名古屋店</p>
+      </div>
+    </section>
+  </article>
+</body>
+</html>
