@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>スケジュールアプリ（拡張版 Ver.11）</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --accent: #2f76d0;
+      --accent-weak: rgba(47, 118, 208, 0.18);
+      --accent-border: #1f5ca2;
+      --danger: #cf4d45;
+      --surface: #f7f9fc;
+      --border: #d5dce7;
+      --text-muted: #5a6473;
+      --bg: #eef2f8;
+      font-family: "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: #1d2733;
+    }
+
+    header {
+      background: linear-gradient(90deg, #3f88f0, #285bd8);
+      color: #fff;
+      padding: 16px 24px 12px;
+      box-shadow: 0 2px 8px rgba(20, 40, 80, 0.35);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.4rem;
+      letter-spacing: 0.08em;
+    }
+
+    .toolbar {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .range {
+      font-weight: 600;
+      font-size: 1.05rem;
+    }
+
+    .nav-buttons {
+      display: inline-flex;
+      border: 1px solid rgba(255, 255, 255, 0.65);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .nav-buttons button {
+      background: rgba(0, 0, 0, 0.12);
+      color: #fff;
+      border: none;
+      padding: 6px 12px;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+
+    .nav-buttons button:hover {
+      background: rgba(0, 0, 0, 0.24);
+    }
+
+    .view-switch {
+      display: inline-flex;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.12);
+      padding: 4px;
+      gap: 4px;
+    }
+
+    .view-switch button {
+      border: none;
+      border-radius: 999px;
+      background: transparent;
+      color: #fff;
+      padding: 6px 16px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+
+    .view-switch button.active {
+      background: #fff;
+      color: #285bd8;
+      font-weight: 600;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    }
+
+    .view-actions {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .view-actions .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    main {
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .calendar-shell {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(15, 35, 60, 0.12);
+      overflow: hidden;
+    }
+
+    .calendar-heading {
+      padding: 10px 16px 6px;
+      background: #f0f4fb;
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
+      color: #244a88;
+      font-size: 1rem;
+    }
+
+    .weekday-header {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      border-bottom: 1px solid var(--border);
+      background: #f6f8fd;
+    }
+
+    .weekday-header span {
+      padding: 8px 4px;
+      font-weight: 600;
+      font-size: 0.82rem;
+      text-align: center;
+      color: #244a88;
+      display: grid;
+      gap: 2px;
+    }
+
+    .weekday-header span strong {
+      font-size: 0.85rem;
+    }
+
+    .weekday-header span small {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .weekday-header span.sun {
+      color: #d04b4b;
+    }
+
+    .weekday-header span.sat {
+      color: #2f76d0;
+    }
+
+    .month-weeks,
+    .week-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .month-week,
+    .week-row {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      border-bottom: 1px solid var(--border);
+      min-height: 100px;
+      background: #fff;
+    }
+
+    .month-week:last-child,
+    .week-row:last-child {
+      border-bottom: none;
+    }
+
+    .day-cell {
+      border-right: 1px solid var(--border);
+      padding: 32px 8px 8px;
+      background: transparent;
+      grid-row: 1;
+      position: relative;
+      min-height: 130px;
+      z-index: 1;
+    }
+
+    .week-row .day-cell {
+      min-height: 130px;
+    }
+
+    .day-cell:last-child {
+      border-right: none;
+    }
+
+    .day-cell.outside {
+      background: #f8f9fd;
+      color: var(--text-muted);
+    }
+
+    .day-number {
+      font-weight: 600;
+      color: #273248;
+      font-size: 0.95rem;
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 24px;
+    }
+
+    .day-cell.outside .day-number {
+      color: #97a0b0;
+    }
+
+    .day-cell.today .day-number {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 999px;
+      padding: 0 8px;
+    }
+
+    .day-cell.drop-target {
+      outline: 2px dashed var(--accent);
+      outline-offset: -2px;
+    }
+
+    .event-bar {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      padding: 6px 10px;
+      min-height: 34px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      line-height: 1.4;
+      cursor: pointer;
+      border-left: 4px solid var(--accent);
+      background: var(--accent-weak);
+      z-index: 2;
+    }
+
+    .event-bar .time {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      font-weight: 600;
+    }
+
+    .event-bar .title {
+      font-weight: 600;
+      color: #1f2b3d;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: initial;
+      word-break: break-word;
+    }
+
+    .event-bar.dragging {
+      opacity: 0.6;
+    }
+
+    dialog::backdrop {
+      background: rgba(17, 28, 45, 0.45);
+    }
+
+    dialog {
+      border: none;
+      border-radius: 16px;
+      padding: 0;
+      box-shadow: 0 12px 32px rgba(15, 35, 60, 0.35);
+      width: min(480px, 92vw);
+    }
+
+    .dialog-body {
+      padding: 20px 24px 12px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .dialog-body h3 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    input[type="text"],
+    input[type="date"],
+    textarea,
+    select {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.95rem;
+      background: #fff;
+      width: 100%;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .time-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      align-items: end;
+    }
+
+    .time-row .all-day-option {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 8px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      padding: 10px 12px;
+      min-height: 56px;
+    }
+
+    .time-row .all-day-option input {
+      accent-color: var(--accent);
+    }
+
+    .time-select-group .time-selectors {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .time-selectors select {
+      width: auto;
+      min-width: 80px;
+    }
+
+    .time-selectors span {
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    fieldset.tag-field {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin: 0;
+      padding: 12px;
+      display: grid;
+      gap: 8px;
+      background: #fff;
+    }
+
+    fieldset.tag-field legend {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      padding: 0 4px;
+    }
+
+    .tag-caption {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: -4px;
+      display: block;
+    }
+
+    .tag-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 8px;
+    }
+
+    .tag-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: #324055;
+      transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+
+    .tag-option input {
+      accent-color: var(--accent);
+    }
+
+    .tag-option.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(47, 118, 208, 0.16);
+      background: rgba(47, 118, 208, 0.06);
+    }
+
+    .dialog-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      padding: 0 24px 20px;
+    }
+
+    .btn-primary,
+    .btn-secondary,
+    .btn-danger {
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .btn-primary {
+      background: #fff;
+      color: #285bd8;
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    header .btn-primary {
+      background: #fff;
+      color: #285bd8;
+      border: none;
+    }
+
+    .btn-primary:hover {
+      background: rgba(255, 255, 255, 0.85);
+    }
+
+    .btn-secondary {
+      background: #fff;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    .btn-secondary:hover {
+      background: var(--accent-weak);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(207, 77, 69, 0.25);
+    }
+
+    .btn-danger:hover {
+      background: #b63a33;
+    }
+
+    @media (max-width: 720px) {
+    header {
+      padding: 14px 16px 10px;
+    }
+
+    header h1 {
+      font-size: 1.2rem;
+    }
+
+    .toolbar {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .view-actions {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .view-switch {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .view-actions .btn-primary {
+      width: 100%;
+      justify-content: center;
+    }
+
+      .weekday-header span {
+        font-size: 0.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>スケジュールアプリ</h1>
+    <div class="toolbar">
+      <span class="range" id="rangeLabel"></span>
+      <div class="nav-buttons">
+        <button type="button" id="prevBtn">◀ 前へ</button>
+        <button type="button" id="todayBtn">今日</button>
+        <button type="button" id="nextBtn">次へ ▶</button>
+      </div>
+      <div class="view-actions">
+        <div class="view-switch" id="viewSwitch">
+          <button type="button" data-view="month" class="active">月</button>
+          <button type="button" data-view="week">週</button>
+        </div>
+        <button type="button" class="btn-primary" id="openFormBtn">予定を登録</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="calendar-shell" id="monthShell">
+      <div class="calendar-heading" id="monthTitle"></div>
+      <div class="weekday-header" id="monthWeekdays"></div>
+      <div class="month-weeks" id="monthView"></div>
+    </section>
+    <section class="calendar-shell" id="weekShell" hidden>
+      <div class="calendar-heading" id="weekTitle"></div>
+      <div class="weekday-header" id="weekWeekdays"></div>
+      <div class="week-grid" id="weekView"></div>
+    </section>
+  </main>
+
+  <dialog id="scheduleDialog">
+    <form id="scheduleForm">
+      <div class="dialog-body">
+        <h3 id="dialogHeading">予定を登録</h3>
+        <label>
+          開始日
+          <input type="date" id="dialogStartDate" name="startDate" required />
+        </label>
+        <label>
+          終了日
+          <input type="date" id="dialogEndDate" name="endDate" required />
+        </label>
+        <fieldset class="tag-field">
+          <legend>タグ</legend>
+          <span class="tag-caption">（任意・1つ選択）</span>
+          <div class="tag-options" id="tagOptions">
+            <label class="tag-option" data-tag-value=""><input type="radio" name="tag" value="" />タグなし</label>
+            <label class="tag-option" data-tag-value="guest"><input type="radio" name="tag" value="guest" />来客</label>
+            <label class="tag-option" data-tag-value="meeting"><input type="radio" name="tag" value="meeting" />会議</label>
+            <label class="tag-option" data-tag-value="outing"><input type="radio" name="tag" value="outing" />外出</label>
+            <label class="tag-option" data-tag-value="holiday"><input type="radio" name="tag" value="holiday" />休日</label>
+          </div>
+        </fieldset>
+        <div class="time-row">
+          <label class="time-select-group">
+            開始時間（任意）
+            <div class="time-selectors">
+              <select id="dialogStartHour" name="startHour">
+                <option value="">--</option>
+                <option value="00">00</option>
+                <option value="01">01</option>
+                <option value="02">02</option>
+                <option value="03">03</option>
+                <option value="04">04</option>
+                <option value="05">05</option>
+                <option value="06">06</option>
+                <option value="07">07</option>
+                <option value="08">08</option>
+                <option value="09">09</option>
+                <option value="10">10</option>
+                <option value="11">11</option>
+                <option value="12">12</option>
+                <option value="13">13</option>
+                <option value="14">14</option>
+                <option value="15">15</option>
+                <option value="16">16</option>
+                <option value="17">17</option>
+                <option value="18">18</option>
+                <option value="19">19</option>
+                <option value="20">20</option>
+                <option value="21">21</option>
+                <option value="22">22</option>
+                <option value="23">23</option>
+              </select>
+              <span>:</span>
+              <select id="dialogStartMinute" name="startMinute" disabled>
+                <option value="">--</option>
+                <option value="00">00</option>
+                <option value="15">15</option>
+                <option value="30">30</option>
+                <option value="45">45</option>
+              </select>
+            </div>
+          </label>
+          <label class="time-select-group">
+            終了時間（任意）
+            <div class="time-selectors">
+              <select id="dialogEndHour" name="endHour">
+                <option value="">--</option>
+                <option value="00">00</option>
+                <option value="01">01</option>
+                <option value="02">02</option>
+                <option value="03">03</option>
+                <option value="04">04</option>
+                <option value="05">05</option>
+                <option value="06">06</option>
+                <option value="07">07</option>
+                <option value="08">08</option>
+                <option value="09">09</option>
+                <option value="10">10</option>
+                <option value="11">11</option>
+                <option value="12">12</option>
+                <option value="13">13</option>
+                <option value="14">14</option>
+                <option value="15">15</option>
+                <option value="16">16</option>
+                <option value="17">17</option>
+                <option value="18">18</option>
+                <option value="19">19</option>
+                <option value="20">20</option>
+                <option value="21">21</option>
+                <option value="22">22</option>
+                <option value="23">23</option>
+              </select>
+              <span>:</span>
+              <select id="dialogEndMinute" name="endMinute" disabled>
+                <option value="">--</option>
+                <option value="00">00</option>
+                <option value="15">15</option>
+                <option value="30">30</option>
+                <option value="45">45</option>
+              </select>
+            </div>
+          </label>
+          <label class="all-day-option">
+            <input type="checkbox" id="dialogAllDay" name="allDay" />
+            終日
+          </label>
+        </div>
+        <label>
+          タイトル
+          <input type="text" id="dialogTitleInput" name="title" placeholder="例：打ち合わせ" />
+        </label>
+        <label>
+          メモ
+          <textarea id="dialogMemo" name="memo" placeholder="メモは任意です"></textarea>
+        </label>
+      </div>
+      <div class="dialog-actions">
+        <button type="submit" class="btn-primary" id="saveBtn">保存</button>
+        <button type="button" class="btn-danger" id="deleteBtn">削除</button>
+        <button type="button" class="btn-secondary" id="cancelBtn">キャンセル</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    const STORAGE_KEY = "advancedSchedulesV2";
+    const VIEW_MODES = ["month", "week"];
+    const MONDAY_FIRST = [1, 2, 3, 4, 5, 6, 0];
+    const WEEKDAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
+    const TAG_ORDER = ["guest", "meeting", "outing", "holiday"];
+    const TAG_OPTIONS = [
+      { value: "guest", label: "来客", border: "#2f76d0", background: "rgba(47, 118, 208, 0.18)" },
+      { value: "meeting", label: "会議", border: "#d08a2f", background: "rgba(208, 138, 47, 0.22)" },
+      { value: "outing", label: "外出", border: "#2f9d63", background: "rgba(47, 157, 99, 0.18)" },
+      { value: "holiday", label: "休日", border: "#cf4d45", background: "rgba(207, 77, 69, 0.2)" }
+    ];
+    const DEFAULT_TAG_STYLE = { border: "#b9c2d2", background: "#fff" };
+    const TOTAL_COLUMNS = 7;
+    const COLUMN_WIDTH_PERCENT = 100 / TOTAL_COLUMNS;
+    const EVENT_TOP_OFFSET = 44;
+    const EVENT_MIN_HEIGHT = 36;
+    const EVENT_LANE_GAP = 8;
+    const QUARTER_MINUTES = [0, 15, 30, 45];
+
+    const rangeLabel = document.getElementById("rangeLabel");
+    const viewSwitch = document.getElementById("viewSwitch");
+    const monthShell = document.getElementById("monthShell");
+    const weekShell = document.getElementById("weekShell");
+    const monthTitle = document.getElementById("monthTitle");
+    const weekTitle = document.getElementById("weekTitle");
+    const monthWeekdays = document.getElementById("monthWeekdays");
+    const weekWeekdays = document.getElementById("weekWeekdays");
+    const monthView = document.getElementById("monthView");
+    const weekView = document.getElementById("weekView");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const todayBtn = document.getElementById("todayBtn");
+    const openFormBtn = document.getElementById("openFormBtn");
+
+    const scheduleDialog = document.getElementById("scheduleDialog");
+    const scheduleForm = document.getElementById("scheduleForm");
+    const dialogHeading = document.getElementById("dialogHeading");
+    const dialogStartDate = document.getElementById("dialogStartDate");
+    const dialogEndDate = document.getElementById("dialogEndDate");
+    const dialogStartHour = document.getElementById("dialogStartHour");
+    const dialogStartMinute = document.getElementById("dialogStartMinute");
+    const dialogEndHour = document.getElementById("dialogEndHour");
+    const dialogEndMinute = document.getElementById("dialogEndMinute");
+    const dialogAllDay = document.getElementById("dialogAllDay");
+    const dialogTitleInput = document.getElementById("dialogTitleInput");
+    const dialogMemo = document.getElementById("dialogMemo");
+    const tagOptions = Array.from(document.querySelectorAll('input[name="tag"]'));
+    const tagLabels = Array.from(document.querySelectorAll('.tag-option'));
+    const saveBtn = document.getElementById("saveBtn");
+    const deleteBtn = document.getElementById("deleteBtn");
+    deleteBtn.style.display = "none";
+    const cancelBtn = document.getElementById("cancelBtn");
+    const timeSelectorPairs = [
+      { hour: dialogStartHour, minute: dialogStartMinute },
+      { hour: dialogEndHour, minute: dialogEndMinute },
+    ];
+    const startTimePair = timeSelectorPairs[0];
+    const endTimePair = timeSelectorPairs[1];
+
+    const today = new Date();
+    let focusDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    let currentView = "month";
+    let weekStartExact = false;
+    let schedules = loadSchedules();
+    let editingId = null;
+    let dragState = null;
+
+    init();
+
+    function init() {
+      renderMonthWeekdayHeader();
+      render();
+      setupEvents();
+    }
+
+    function setupEvents() {
+      viewSwitch.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-view]");
+        if (!button) return;
+        setView(button.dataset.view);
+      });
+
+      prevBtn.addEventListener("click", () => moveFocus(-1));
+      nextBtn.addEventListener("click", () => moveFocus(1));
+      todayBtn.addEventListener("click", () => {
+        focusDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        weekStartExact = currentView === "week";
+        render();
+      });
+
+      openFormBtn.addEventListener("click", () => {
+        openCreateDialog();
+      });
+
+      dialogStartDate.addEventListener("change", () => {
+        if (!dialogStartDate.value) return;
+        if (!dialogEndDate.value || dialogEndDate.value < dialogStartDate.value) {
+          dialogEndDate.value = dialogStartDate.value;
+        }
+      });
+
+      timeSelectorPairs.forEach((pair) => {
+        pair.hour.addEventListener("change", () => syncTimeSelectorPair(pair));
+        pair.minute.addEventListener("change", () => syncTimeSelectorPair(pair));
+      });
+
+      dialogAllDay.addEventListener("change", () => {
+        syncAllTimeSelectors();
+      });
+
+      scheduleForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const startDate = dialogStartDate.value;
+        const endDateRaw = dialogEndDate.value;
+        if (!startDate || !endDateRaw) {
+          alert("開始日と終了日を入力してください。");
+          return;
+        }
+        const normalizedEnd = endDateRaw >= startDate ? endDateRaw : startDate;
+        const allDay = dialogAllDay.checked;
+        const payload = {
+          id: editingId || Date.now().toString(),
+          startDate,
+          endDate: normalizedEnd,
+          startTime: allDay ? "" : getTimeFromPair(startTimePair),
+          endTime: allDay ? "" : getTimeFromPair(endTimePair),
+          allDay,
+          title: dialogTitleInput.value.trim(),
+          memo: dialogMemo.value.trim(),
+          tag: getSelectedTag(),
+        };
+        if (editingId) {
+          const target = schedules.find((item) => item.id === editingId);
+          if (target) {
+            Object.assign(target, payload);
+          }
+        } else {
+          schedules.push(payload);
+        }
+        saveSchedules();
+        closeScheduleDialog();
+        render();
+      });
+
+      deleteBtn.addEventListener("click", () => {
+        if (!editingId) return;
+        const ok = confirm("この予定を削除しますか？");
+        if (!ok) return;
+        schedules = schedules.filter((item) => item.id !== editingId);
+        saveSchedules();
+        closeScheduleDialog();
+        render();
+      });
+
+      cancelBtn.addEventListener("click", () => {
+        closeScheduleDialog();
+      });
+
+      scheduleDialog.addEventListener("close", () => {
+        resetDialog();
+      });
+
+      tagOptions.forEach((input) => {
+        input.addEventListener("change", () => {
+          updateTagActiveState();
+        });
+      });
+
+      syncAllTimeSelectors();
+    }
+
+    function coerceQuarterValue(value) {
+      if (!value) return "";
+      const [hourStr, minuteStr] = value.split(":");
+      if (minuteStr === undefined) return value;
+      const hour = hourStr.padStart(2, "0");
+      const minuteNum = Number(minuteStr);
+      if (Number.isNaN(minuteNum)) {
+        return `${hour}:00`;
+      }
+      let closest = QUARTER_MINUTES[0];
+      let diff = Math.abs(minuteNum - closest);
+      for (let i = 1; i < QUARTER_MINUTES.length; i++) {
+        const candidate = QUARTER_MINUTES[i];
+        const candidateDiff = Math.abs(minuteNum - candidate);
+        if (candidateDiff < diff) {
+          closest = candidate;
+          diff = candidateDiff;
+        }
+      }
+      const minute = String(closest).padStart(2, "0");
+      return `${hour}:${minute}`;
+    }
+
+    function getTimeFromPair(pair) {
+      const hour = pair.hour.value;
+      if (!hour) {
+        return "";
+      }
+      const minute = pair.minute.value || "00";
+      return `${hour}:${minute}`;
+    }
+
+    function setTimePairValue(pair, value) {
+      const normalized = coerceQuarterValue(value);
+      if (!normalized) {
+        pair.hour.value = "";
+        pair.minute.value = "";
+      } else {
+        const [hour, minute] = normalized.split(":");
+        pair.hour.value = hour || "";
+        pair.minute.value = minute || "";
+      }
+      syncTimeSelectorPair(pair);
+    }
+
+    function syncAllTimeSelectors() {
+      timeSelectorPairs.forEach((pair) => syncTimeSelectorPair(pair));
+    }
+
+    function syncTimeSelectorPair(pair) {
+      if (dialogAllDay.checked) {
+        pair.hour.value = "";
+        pair.minute.value = "";
+        pair.hour.disabled = true;
+        pair.minute.disabled = true;
+        return;
+      }
+      pair.hour.disabled = false;
+      if (!pair.hour.value) {
+        pair.minute.value = "";
+        pair.minute.disabled = true;
+        return;
+      }
+      pair.minute.disabled = false;
+      if (!pair.minute.value || !QUARTER_MINUTES.includes(Number(pair.minute.value))) {
+        pair.minute.value = "00";
+      }
+    }
+
+    function renderMonthWeekdayHeader() {
+      monthWeekdays.innerHTML = "";
+      MONDAY_FIRST.forEach((index) => {
+        const span = document.createElement("span");
+        span.innerHTML = `<strong>${WEEKDAY_LABELS[index]}</strong>`;
+        if (index === 0) span.classList.add("sun");
+        if (index === 6) span.classList.add("sat");
+        monthWeekdays.appendChild(span);
+      });
+    }
+
+    function setView(view) {
+      if (!VIEW_MODES.includes(view)) return;
+      currentView = view;
+      weekStartExact = false;
+      if (currentView === "month") {
+        focusDate = new Date(focusDate.getFullYear(), focusDate.getMonth(), 1);
+      } else {
+        focusDate = getStartOfWeek(focusDate, true);
+      }
+      render();
+    }
+
+    function moveFocus(direction) {
+      const shift = Number(direction);
+      if (Number.isNaN(shift)) return;
+      if (currentView === "week") {
+        focusDate.setDate(focusDate.getDate() + shift * 7);
+        weekStartExact = false;
+      } else {
+        focusDate.setMonth(focusDate.getMonth() + shift);
+      }
+      render();
+    }
+
+    function render() {
+      syncViewButtons();
+      if (currentView === "month") {
+        showMonthView();
+      } else {
+        showWeekView();
+      }
+    }
+
+    function syncViewButtons() {
+      viewSwitch.querySelectorAll("button").forEach((button) => {
+        button.classList.toggle("active", button.dataset.view === currentView);
+      });
+    }
+
+    function showMonthView() {
+      monthShell.hidden = false;
+      weekShell.hidden = true;
+
+      const year = focusDate.getFullYear();
+      const month = focusDate.getMonth();
+      const firstOfMonth = new Date(year, month, 1);
+      const lastOfMonth = new Date(year, month + 1, 0);
+      const firstWeekStart = getStartOfWeek(firstOfMonth, true);
+
+      const weeks = [];
+      let cursor = new Date(firstWeekStart);
+      while (cursor <= lastOfMonth || weeks.length < 6) {
+        weeks.push(new Date(cursor));
+        cursor.setDate(cursor.getDate() + 7);
+        if (weeks.length > 6 && cursor > lastOfMonth) break;
+      }
+
+      monthTitle.textContent = `${year}年${month + 1}月`;
+      rangeLabel.textContent = `${year}年${month + 1}月`;
+      monthView.innerHTML = "";
+
+      weeks.forEach((weekStart) => {
+        const weekRow = document.createElement("div");
+        weekRow.className = "month-week";
+        const weekEnd = addDays(weekStart, 6);
+
+        MONDAY_FIRST.forEach((_, columnIndex) => {
+          const date = addDays(weekStart, columnIndex);
+          const isCurrent = date.getMonth() === month;
+          const cell = createDayCell(date, isCurrent);
+          weekRow.appendChild(cell);
+        });
+
+        const relevant = schedules
+          .map((schedule) => projectScheduleToRange(schedule, weekStart, weekEnd))
+          .filter(Boolean)
+          .sort((a, b) => a.startColumn - b.startColumn || b.span - a.span);
+
+        monthView.appendChild(weekRow);
+        placeEventBars(weekRow, relevant);
+      });
+    }
+
+    function showWeekView() {
+      monthShell.hidden = true;
+      weekShell.hidden = false;
+
+      const base = weekStartExact ? new Date(focusDate) : getStartOfWeek(focusDate, true);
+      focusDate = new Date(base);
+      const weekEnd = addDays(base, 6);
+
+      const startLabel = `${base.getFullYear()}年${base.getMonth() + 1}月${base.getDate()}日`;
+      const endLabel = `${weekEnd.getFullYear()}年${weekEnd.getMonth() + 1}月${weekEnd.getDate()}日`;
+      rangeLabel.textContent = `${startLabel} 〜 ${endLabel}`;
+
+      const startMonth = `${base.getFullYear()}年${base.getMonth() + 1}月`;
+      const endMonth = `${weekEnd.getFullYear()}年${weekEnd.getMonth() + 1}月`;
+      weekTitle.textContent = startMonth === endMonth ? startMonth : `${startMonth} 〜 ${endMonth}`;
+
+      weekWeekdays.innerHTML = "";
+      for (let i = 0; i < 7; i++) {
+        const date = addDays(base, i);
+        const span = document.createElement("span");
+        span.innerHTML = `<strong>${date.getMonth() + 1}/${date.getDate()}</strong><small>${WEEKDAY_LABELS[date.getDay()]}</small>`;
+        if (date.getDay() === 0) span.classList.add("sun");
+        if (date.getDay() === 6) span.classList.add("sat");
+        weekWeekdays.appendChild(span);
+      }
+
+      weekView.innerHTML = "";
+      const weekRow = document.createElement("div");
+      weekRow.className = "week-row";
+
+      for (let i = 0; i < 7; i++) {
+        const date = addDays(base, i);
+        const cell = createDayCell(date, true);
+        weekRow.appendChild(cell);
+      }
+
+      const relevant = schedules
+        .map((schedule) => projectScheduleToRange(schedule, base, weekEnd))
+        .filter(Boolean)
+        .sort((a, b) => a.startColumn - b.startColumn || b.span - a.span);
+
+      weekView.appendChild(weekRow);
+      placeEventBars(weekRow, relevant);
+    }
+
+    function createDayCell(date, isCurrentMonth) {
+      const cell = document.createElement("div");
+      cell.className = "day-cell";
+      if (!isCurrentMonth) {
+        cell.classList.add("outside");
+      }
+      if (isSameDate(date, today)) {
+        cell.classList.add("today");
+      }
+      cell.dataset.date = formatInputDate(date);
+
+      const number = document.createElement("div");
+      number.className = "day-number";
+      number.textContent = date.getDate();
+      cell.appendChild(number);
+
+      cell.addEventListener("dragenter", handleDayDragEnter);
+      cell.addEventListener("dragover", handleDayDragOver);
+      cell.addEventListener("dragleave", handleDayDragLeave);
+      cell.addEventListener("drop", handleDayDrop);
+      cell.addEventListener("dblclick", () => {
+        openCreateDialog(cell.dataset.date);
+      });
+
+      return cell;
+    }
+
+    function placeEventBars(container, projectedEvents) {
+      const lanes = [];
+      const laneBars = [];
+      projectedEvents.forEach((entry) => {
+        const laneIndex = findLane(lanes, entry.startColumn);
+        lanes[laneIndex] = entry.endColumn;
+        const bar = buildEventBar(entry.schedule, laneIndex, entry.startColumn, entry.endColumn);
+        container.appendChild(bar);
+        if (!laneBars[laneIndex]) {
+          laneBars[laneIndex] = [];
+        }
+        laneBars[laneIndex].push(bar);
+      });
+
+      const laneHeights = laneBars.map((bars) => {
+        if (!bars || !bars.length) return 0;
+        const measured = Math.max(
+          ...bars.map((bar) => {
+            const rect = bar.getBoundingClientRect();
+            const rectHeight = rect.height || 0;
+            return rectHeight || bar.offsetHeight || bar.scrollHeight || 0;
+          }),
+          0
+        );
+        return Math.max(measured, EVENT_MIN_HEIGHT);
+      });
+
+      let offset = EVENT_TOP_OFFSET;
+      const laneOffsets = laneHeights.map((height) => {
+        const top = offset;
+        offset += height + EVENT_LANE_GAP;
+        return top;
+      });
+
+      laneBars.forEach((bars, index) => {
+        if (!bars || !bars.length) return;
+        const top = laneOffsets[index];
+        bars.forEach((bar) => {
+          bar.style.top = `${top}px`;
+        });
+      });
+
+      const isWeek = container.classList.contains("week-row");
+      const baseHeight = isWeek ? 88 : 92;
+      const laneCount = laneHeights.length;
+      const contentBottom =
+        laneCount > 0 ? laneOffsets[laneCount - 1] + laneHeights[laneCount - 1] : EVENT_TOP_OFFSET;
+      const padding = 12;
+      const targetHeight = Math.max(baseHeight, contentBottom + padding);
+      container.style.minHeight = `${targetHeight}px`;
+    }
+
+    function findLane(lanes, startColumn) {
+      for (let i = 0; i < lanes.length; i++) {
+        if (startColumn > lanes[i]) {
+          return i;
+        }
+      }
+      lanes.push(-1);
+      return lanes.length - 1;
+    }
+
+    function buildEventBar(schedule, laneIndex, startColumn, endColumn) {
+      const bar = document.createElement("div");
+      bar.className = "event-bar";
+      const frame = calculateBarFrame(startColumn, endColumn);
+      bar.style.left = frame.left;
+      bar.style.width = frame.width;
+      bar.style.top = `${EVENT_TOP_OFFSET}px`;
+      const style = resolveTagStyle(schedule.tag);
+      bar.style.borderLeftColor = style.border;
+      bar.style.background = style.background;
+
+      const timeText = formatScheduleTime(schedule);
+      if (timeText) {
+        const timeEl = document.createElement("div");
+        timeEl.className = "time";
+        timeEl.textContent = timeText;
+        bar.appendChild(timeEl);
+      }
+
+      const titleText = schedule.title?.trim();
+      if (titleText) {
+        const titleEl = document.createElement("div");
+        titleEl.className = "title";
+        titleEl.textContent = titleText;
+        bar.appendChild(titleEl);
+      }
+
+      bar.dataset.scheduleId = schedule.id;
+      bar.setAttribute("draggable", "true");
+      bar.addEventListener("click", (event) => {
+        if (dragState?.active) return;
+        openEditDialog(schedule.id);
+        event.stopPropagation();
+      });
+      bar.addEventListener("dragstart", (event) => {
+        dragState = {
+          active: true,
+          scheduleId: schedule.id,
+          sourceStart: schedule.startDate,
+        };
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", schedule.id);
+        bar.classList.add("dragging");
+      });
+      bar.addEventListener("dragend", () => {
+        bar.classList.remove("dragging");
+        dragState = null;
+      });
+
+      return bar;
+    }
+
+    function calculateBarFrame(startColumn, endColumn) {
+      const span = endColumn - startColumn + 1;
+      const leftPercent = startColumn * COLUMN_WIDTH_PERCENT;
+      const widthPercent = span * COLUMN_WIDTH_PERCENT;
+      return {
+        left: `calc(${leftPercent.toFixed(4)}% + 6px)`,
+        width: `calc(${widthPercent.toFixed(4)}% - 12px)`
+      };
+    }
+
+    function projectScheduleToRange(schedule, rangeStart, rangeEnd) {
+      const scheduleStart = parseISODate(schedule.startDate);
+      const scheduleEnd = parseISODate(schedule.endDate);
+      if (scheduleEnd < rangeStart || scheduleStart > rangeEnd) {
+        return null;
+      }
+      const startColumn = Math.max(0, differenceInDays(scheduleStart, rangeStart));
+      const endColumn = Math.min(6, differenceInDays(scheduleEnd, rangeStart));
+      return {
+        schedule,
+        startColumn,
+        endColumn,
+        span: endColumn - startColumn + 1,
+      };
+    }
+
+    function openCreateDialog(initialDate) {
+      editingId = null;
+      dialogHeading.textContent = "予定を登録";
+      saveBtn.textContent = "保存";
+      deleteBtn.style.display = "none";
+      const baseISO = initialDate || formatInputDate(today);
+      dialogStartDate.value = baseISO;
+      dialogEndDate.value = baseISO;
+      dialogAllDay.checked = false;
+      setTimePairValue(startTimePair, "");
+      setTimePairValue(endTimePair, "");
+      dialogTitleInput.value = "";
+      dialogMemo.value = "";
+      tagOptions.forEach((input) => {
+        input.checked = input.value === "";
+      });
+      updateTagActiveState();
+      syncAllTimeSelectors();
+      scheduleDialog.showModal();
+    }
+
+    function openEditDialog(scheduleId) {
+      const target = schedules.find((item) => item.id === scheduleId);
+      if (!target) return;
+      editingId = scheduleId;
+      dialogHeading.textContent = "予定を編集";
+      saveBtn.textContent = "更新";
+      deleteBtn.style.display = "inline-flex";
+      dialogStartDate.value = target.startDate;
+      dialogEndDate.value = target.endDate;
+      dialogAllDay.checked = Boolean(target.allDay);
+      setTimePairValue(startTimePair, target.startTime || "");
+      setTimePairValue(endTimePair, target.endTime || "");
+      dialogTitleInput.value = target.title || "";
+      dialogMemo.value = target.memo || "";
+      const tagValue = target.tag || "";
+      tagOptions.forEach((input) => {
+        input.checked = input.value === tagValue;
+      });
+      updateTagActiveState();
+      syncAllTimeSelectors();
+      scheduleDialog.showModal();
+    }
+
+    function closeScheduleDialog() {
+      if (typeof scheduleDialog.close === "function") {
+        scheduleDialog.close();
+      } else {
+        scheduleDialog.removeAttribute("open");
+        scheduleDialog.dispatchEvent(new Event("close"));
+      }
+    }
+
+    function resetDialog() {
+      scheduleForm.reset();
+      editingId = null;
+      deleteBtn.style.display = "none";
+      tagOptions.forEach((input) => {
+        input.checked = input.value === "";
+      });
+      updateTagActiveState();
+      dialogAllDay.checked = false;
+      syncAllTimeSelectors();
+    }
+
+    function getSelectedTag() {
+      const selected = tagOptions.find((input) => input.checked);
+      return selected ? selected.value : "";
+    }
+
+    function updateTagActiveState() {
+      const selected = getSelectedTag();
+      tagLabels.forEach((label) => {
+        label.classList.toggle("active", label.dataset.tagValue === selected);
+      });
+    }
+
+    function resolveTagStyle(tag) {
+      if (!tag) return DEFAULT_TAG_STYLE;
+      const option = TAG_OPTIONS.find((item) => item.value === tag);
+      return option ? { border: option.border, background: option.background } : DEFAULT_TAG_STYLE;
+    }
+
+    function formatScheduleTime(schedule) {
+      if (schedule.allDay) {
+        return "終日";
+      }
+      const hasStart = Boolean(schedule.startTime);
+      const hasEnd = Boolean(schedule.endTime);
+      if (!hasStart && !hasEnd) {
+        return "";
+      }
+      const start = hasStart ? schedule.startTime.slice(0, 5) : "--:--";
+      const end = hasEnd ? schedule.endTime.slice(0, 5) : "--:--";
+      if (schedule.startDate === schedule.endDate) {
+        return `${start} 〜 ${end}`;
+      }
+      const startLabel = hasStart
+        ? `${formatJapaneseDate(schedule.startDate)} ${start}`
+        : formatJapaneseDate(schedule.startDate);
+      const endLabel = hasEnd
+        ? `${formatJapaneseDate(schedule.endDate)} ${end}`
+        : formatJapaneseDate(schedule.endDate);
+      return `${startLabel} 〜 ${endLabel}`;
+    }
+
+    function formatJapaneseDate(isoDate) {
+      const date = parseISODate(isoDate);
+      return `${date.getMonth() + 1}月${date.getDate()}日`;
+    }
+
+    function handleDayDragEnter(event) {
+      if (!dragState?.active) return;
+      event.currentTarget.classList.add("drop-target");
+    }
+
+    function handleDayDragOver(event) {
+      if (!dragState?.active) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+    }
+
+    function handleDayDragLeave(event) {
+      event.currentTarget.classList.remove("drop-target");
+    }
+
+    function handleDayDrop(event) {
+      const cell = event.currentTarget;
+      cell.classList.remove("drop-target");
+      if (!dragState?.active) return;
+      event.preventDefault();
+      const targetSchedule = schedules.find((item) => item.id === dragState.scheduleId);
+      if (!targetSchedule) return;
+      const dropDate = cell.dataset.date;
+      if (!dropDate) return;
+      const diff = differenceInDays(parseISODate(dropDate), parseISODate(dragState.sourceStart));
+      if (diff === 0) {
+        dragState = null;
+        return;
+      }
+      const newStart = addDays(parseISODate(targetSchedule.startDate), diff);
+      const newEnd = addDays(parseISODate(targetSchedule.endDate), diff);
+      targetSchedule.startDate = formatInputDate(newStart);
+      targetSchedule.endDate = formatInputDate(newEnd);
+      dragState = null;
+      saveSchedules();
+      render();
+    }
+
+    function loadSchedules() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        return parsed.map((item) => normalizeSchedule(item)).filter(Boolean);
+      } catch (error) {
+        console.error("Failed to parse schedules", error);
+        return [];
+      }
+    }
+
+    function normalizeSchedule(item) {
+      if (!item) return null;
+      const start = item.startDate || item.date;
+      if (!start) return null;
+      const normalized = {
+        id: (item.id || Date.now()).toString(),
+        startDate: start,
+        endDate: item.endDate && item.endDate >= start ? item.endDate : start,
+        startTime: item.startTime || "",
+        endTime: item.endTime || "",
+        allDay: item.allDay === true || item.allDay === "true",
+        title: item.title || "",
+        memo: item.memo || "",
+        tag: item.tag || (Array.isArray(item.tags) && item.tags.length ? item.tags[0] : ""),
+      };
+      if (normalized.allDay) {
+        normalized.startTime = "";
+        normalized.endTime = "";
+      } else {
+        normalized.startTime = coerceQuarterValue(normalized.startTime);
+        normalized.endTime = coerceQuarterValue(normalized.endTime);
+      }
+      if (!TAG_ORDER.includes(normalized.tag)) {
+        normalized.tag = "";
+      }
+      return normalized;
+    }
+
+    function saveSchedules() {
+      const payload = schedules.map((schedule) => ({
+        ...schedule,
+        tags: schedule.tag ? [schedule.tag] : [],
+      }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    }
+
+    function formatInputDate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function parseISODate(isoString) {
+      const [year, month, day] = isoString.split("-").map(Number);
+      return new Date(year, (month || 1) - 1, day || 1);
+    }
+
+    function addDays(date, days) {
+      const result = new Date(date);
+      result.setDate(result.getDate() + days);
+      return result;
+    }
+
+    function differenceInDays(a, b) {
+      const start = new Date(a.getFullYear(), a.getMonth(), a.getDate());
+      const end = new Date(b.getFullYear(), b.getMonth(), b.getDate());
+      return Math.round((start - end) / 86400000);
+    }
+
+    function isSameDate(a, b) {
+      return (
+        a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate()
+      );
+    }
+
+    function getStartOfWeek(date, mondayFirst = true) {
+      const result = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const day = result.getDay();
+      if (mondayFirst) {
+        const diff = day === 0 ? -6 : 1 - day;
+        result.setDate(result.getDate() + diff);
+      } else {
+        result.setDate(result.getDate() - day);
+      }
+      return new Date(result.getFullYear(), result.getMonth(), result.getDate());
+    }
+  </script>
+</body>
+</html>
